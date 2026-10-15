@@ -80,6 +80,12 @@ export function App() {
 
   useEffect(() => {
     currentConversationIdRef.current = currentConversationId;
+    // Persist active conversation across page refreshes
+    if (currentConversationId) {
+      localStorage.setItem('n8n_active_conversation_id', currentConversationId);
+    } else {
+      localStorage.removeItem('n8n_active_conversation_id');
+    }
   }, [currentConversationId]);
 
   useEffect(() => {
@@ -259,6 +265,7 @@ export function App() {
     setCurrentConversationId(null);
     setTurnResult(null);
     setErrorMessage(null);
+    localStorage.removeItem('n8n_active_conversation_id');
     handleRouteChange('workspace');
     setTimeout(() => {
       const textarea = document.getElementById('automation-prompt');
@@ -662,6 +669,16 @@ export function App() {
       isMounted = false;
     };
   }, []);
+
+  // On page load, restore the last active conversation from localStorage so a
+  // browser refresh doesn't lose progress (draft, clarification, or in-flight generation).
+  useEffect(() => {
+    const savedId = localStorage.getItem('n8n_active_conversation_id');
+    if (savedId) {
+      handleSelectPastConversation(savedId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run once on mount only
 
   const hasActiveWorkflow = Boolean(turnResult?.workflow_ir && stageState === 'ready');
 
